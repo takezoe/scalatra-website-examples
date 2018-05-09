@@ -6,17 +6,11 @@ import org.scalatra._
 import org.scalatra.swagger._
 import org.scalatra.swagger.ResponseMessage
 
-// JSON-related libraries
-import org.json4s.{DefaultFormats, Formats}
-
 // JSON handling support from Scalatra
 import org.scalatra.json._
 
-class FlowersController(implicit val swagger: SwaggerWithAuth) extends ScalatraServlet with NativeJsonSupport with SwaggerSupport  {
+class FlowersController(implicit val swagger: SwaggerWithAuth) extends ScalatraServlet with OurSwaggerAuthBase with SwaggerAuthSupport[User] with NativeJsonSupport with CorsSupport {
 
-  // Sets up automatic case class to JSON output serialization, required by
-  // the JValueResult trait.
-  protected implicit val jsonFormats: Formats = DefaultFormats
 
   // A description of our application. This will show up in the Swagger docs.
   protected val applicationDescription = "The flowershop API. It exposes operations for browsing and searching lists of flowers"
@@ -31,7 +25,8 @@ class FlowersController(implicit val swagger: SwaggerWithAuth) extends ScalatraS
       summary "Show all flowers"
       tags("Flowers")
       notes "Shows all the flowers in the flower shop. You can search it too."
-      parameter queryParam[Option[String]]("name").description("A name to search for"))
+      parameter queryParam[Option[String]]("name").description("A name to search for")
+    ).allows(_.exists(_.id == "scalatra"))
 
   get("/", operation(getFlowers)){
     params.get("name") match {
@@ -47,7 +42,8 @@ class FlowersController(implicit val swagger: SwaggerWithAuth) extends ScalatraS
       tags("Flowers")
       parameters (
       pathParam[String]("slug").description("Slug of flower that needs to be fetched"))
-      responseMessage ResponseMessage(404, "Slug Not Found"))
+      responseMessage ResponseMessage(404, "Slug Not Found")
+    ).allows(_.exists(_.id == "scalatra"))
 
   get("/:slug", operation(findBySlug)) {
     FlowerData.all find (_.slug == params("slug")) match {
